@@ -13,11 +13,11 @@
             --text-muted: #8b949e;
             --up-color: #00e5ff;
             --down-color: #ff6666;
-            --up-bright: #39ff14;   /* Кислотно-зеленый */
-            --down-bright: #ffee00; /* Кислотно-желтый */
-            --limit-buy: #39ff14;   /* Buy: кислотно-зеленый */
-            --limit-sell: #ffee00;  /* Sell: кислотно-желтый */
-            --limit-both: #ff0055;  /* Оба: кислотно-красный */
+            --up-bright: #39ff14;
+            --down-bright: #ffee00;
+            --limit-buy: #39ff14;
+            --limit-sell: #ffee00;
+            --limit-both: #ff0055;
         }
 
         body {
@@ -263,8 +263,22 @@
         try {
             const savedData = localStorage.getItem('myPortfolio');
             if (savedData) {
-                portfolio = JSON.parse(savedData);
-                if (!Array.isArray(portfolio)) portfolio = defaultPortfolio;
+                let parsedData = JSON.parse(savedData);
+                if (Array.isArray(parsedData)) {
+                    // ЖЕСТКАЯ НОРМАЛИЗАЦИЯ ДАННЫХ
+                    // Защищает от крашей скрипта, если прошлые версии сохранили числа как текст
+                    portfolio = parsedData.map(item => ({
+                        ticker: item.ticker || 'UNKNOWN',
+                        stk: parseFloat(item.stk) || 0,
+                        qty: parseFloat(item.qty) || 0,
+                        last: parseFloat(item.last) || 0,
+                        current: parseFloat(item.current) || 0,
+                        delta: parseFloat(item.delta) || 0,
+                        percent: parseFloat(item.percent) || 0,
+                        limitBuy: !!item.limitBuy,
+                        limitSell: !!item.limitSell
+                    }));
+                }
             }
         } catch (e) {
             console.error("Ошибка загрузки локальных данных:", e);
@@ -280,7 +294,7 @@
         }
 
         function isSortingEligible(item) {
-            const hasStk = item.stk !== null && item.stk !== undefined && item.stk !== 0 && item.stk !== '0' && item.stk !== '';
+            const hasStk = item.stk !== null && item.stk !== undefined && item.stk !== 0;
             if (hasStk) return true;
             return item.delta < 0;
         }
@@ -377,7 +391,6 @@
 
                 const sign = isUp ? '+' : '';
                 
-                // Определение класса для названия позиции на основе Buy/Sell
                 let nameClass = 'name-col';
                 if (item.limitBuy && item.limitSell) {
                     nameClass += ' name-both';
@@ -389,7 +402,7 @@
 
                 const tr = document.createElement('tr');
                 
-                const hasStk = item.stk !== null && item.stk !== undefined && item.stk !== 0 && item.stk !== '0' && item.stk !== '';
+                const hasStk = item.stk !== 0;
                 if (!hasStk && item.delta >= 0) {
                     tr.style.opacity = '0.5';
                 }
@@ -437,7 +450,7 @@
             document.getElementById('edit-stk').value = item.stk || 0;
             document.getElementById('edit-qty').value = item.qty || 0;
             
-            const lastPrice = item.last || 0;
+            const lastPrice = parseFloat(item.last) || 0;
             rawCentsValue = Math.round(lastPrice * 100);
             updateCurrencyDisplay();
 
@@ -561,7 +574,17 @@
                     }
                     const importedPortfolio = JSON.parse(rawText);
                     if (Array.isArray(importedPortfolio)) {
-                        portfolio = importedPortfolio;
+                        portfolio = importedPortfolio.map(item => ({
+                            ticker: item.ticker || 'UNKNOWN',
+                            stk: parseFloat(item.stk) || 0,
+                            qty: parseFloat(item.qty) || 0,
+                            last: parseFloat(item.last) || 0,
+                            current: parseFloat(item.current) || 0,
+                            delta: parseFloat(item.delta) || 0,
+                            percent: parseFloat(item.percent) || 0,
+                            limitBuy: !!item.limitBuy,
+                            limitSell: !!item.limitSell
+                        }));
                         saveToLocal();
                         renderTable();
                         updatePrices();
@@ -581,12 +604,12 @@
             data.forEach(apiItem => {
                 const portItem = portfolio.find(p => p.ticker === apiItem.ticker);
                 if (portItem) {
-                    portItem.current = apiItem.price;
+                    portItem.current = parseFloat(apiItem.price) || 0;
                     if (portItem.last > 0) {
                         portItem.delta = portItem.current - portItem.last;
                         portItem.percent = (portItem.delta / portItem.last) * 100;
                     } else {
-                        portItem.percent = apiItem.change || 0;
+                        portItem.percent = parseFloat(apiItem.change) || 0;
                     }
                 }
             });
