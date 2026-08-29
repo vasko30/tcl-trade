@@ -13,10 +13,11 @@
             --text-muted: #8b949e;
             --up-color: #00e5ff;
             --down-color: #ff6666;
-            /* Кислотные оттенки для дельты при отклонении >= 0.25 */
-            --up-bright: #39ff14;   /* Кислотно-зеленый для роста >= 0.25 */
-            --down-bright: #ffee00; /* Кислотно-желтый для падения <= -0.25 */
-            --limit-color: #ff70a6; /* Светло-кислотно-розовый для Limit order */
+            --up-bright: #39ff14;   /* Кислотно-зеленый */
+            --down-bright: #ffee00; /* Кислотно-желтый */
+            --limit-buy: #39ff14;   /* Buy: кислотно-зеленый */
+            --limit-sell: #ffee00;  /* Sell: кислотно-желтый */
+            --limit-both: #ff0055;  /* Оба: кислотно-красный */
         }
 
         body {
@@ -68,7 +69,10 @@
         }
 
         .name-col { font-weight: bold; }
-        .name-limit { color: var(--limit-color) !important; }
+        .name-buy { color: var(--limit-buy) !important; }
+        .name-sell { color: var(--limit-sell) !important; }
+        .name-both { color: var(--limit-both) !important; }
+
         .qty-col, .stk-col { color: var(--text-main); }
         .price-col { font-weight: bold; }
         
@@ -151,7 +155,27 @@
         .modal-field { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .modal-field label { font-size: 13px; color: var(--text-muted); }
         .modal-field input[type="text"] { width: 55%; font-size: 15px; box-sizing: border-box; padding: 8px; }
-        .modal-field input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--limit-color); cursor: pointer; }
+        
+        .checkbox-group {
+            display: flex;
+            gap: 16px;
+            width: 55%;
+            align-items: center;
+        }
+        .checkbox-group label {
+            color: var(--text-main);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #1f6feb;
+            cursor: pointer;
+        }
         
         .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
         .btn-save { background-color: #1f6feb; flex: 1; border: none; padding: 10px 6px; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; cursor: pointer;}
@@ -213,7 +237,10 @@
             </div>
             <div class="modal-field">
                 <label>Limit order:</label>
-                <input type="checkbox" id="edit-limit">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="edit-buy"> Buy</label>
+                    <label><input type="checkbox" id="edit-sell"> Sell</label>
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="btn-save" onclick="savePosition()">Сохр.</button>
@@ -227,9 +254,9 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynsJ2EGFpJBa9DAouEoP4s8vovb4ref_HzSZQ9qahEmfxhbnnSEg9Kt2CPvVL2ENIL/exec';
         
         const defaultPortfolio = [
-            { ticker: 'LCID', stk: 15, qty: 5, last: 6.40, current: 6.47, delta: 0.07, percent: 1.1, isLimit: false },
-            { ticker: 'SOFI', stk: 12, qty: 2, last: 17.85, current: 17.93, delta: 0.08, percent: 0.4, isLimit: true },
-            { ticker: 'TSCO', stk: 7, qty: -3, last: 36.30, current: 36.40, delta: 0.10, percent: 0.3, isLimit: false }
+            { ticker: 'LCID', stk: 15, qty: 5, last: 6.40, current: 6.47, delta: 0.07, percent: 1.1, limitBuy: false, limitSell: false },
+            { ticker: 'SOFI', stk: 12, qty: 2, last: 17.85, current: 17.93, delta: 0.08, percent: 0.4, limitBuy: true, limitSell: false },
+            { ticker: 'TSCO', stk: 7, qty: -3, last: 36.30, current: 36.40, delta: 0.10, percent: 0.3, limitBuy: false, limitSell: true }
         ];
 
         let portfolio = defaultPortfolio;
@@ -349,7 +376,16 @@
                 }
 
                 const sign = isUp ? '+' : '';
-                const nameClass = item.isLimit ? 'name-col name-limit' : 'name-col';
+                
+                // Определение класса для названия позиции на основе Buy/Sell
+                let nameClass = 'name-col';
+                if (item.limitBuy && item.limitSell) {
+                    nameClass += ' name-both';
+                } else if (item.limitBuy) {
+                    nameClass += ' name-buy';
+                } else if (item.limitSell) {
+                    nameClass += ' name-sell';
+                }
 
                 const tr = document.createElement('tr');
                 
@@ -405,7 +441,8 @@
             rawCentsValue = Math.round(lastPrice * 100);
             updateCurrencyDisplay();
 
-            document.getElementById('edit-limit').checked = !!item.isLimit;
+            document.getElementById('edit-buy').checked = !!item.limitBuy;
+            document.getElementById('edit-sell').checked = !!item.limitSell;
             
             document.getElementById('edit-modal').style.display = 'flex';
         }
@@ -440,7 +477,9 @@
                 item.stk = currentStk + changeQty;
                 item.qty = changeQty;
                 item.last = rawCentsValue / 100;
-                item.isLimit = document.getElementById('edit-limit').checked;
+                
+                item.limitBuy = document.getElementById('edit-buy').checked;
+                item.limitSell = document.getElementById('edit-sell').checked;
                 
                 item.delta = item.current > 0 ? (item.current - item.last) : 0;
                 item.percent = item.last > 0 ? (item.delta / item.last) * 100 : 0;
@@ -470,7 +509,7 @@
             }
 
             portfolio.push({
-                ticker: ticker, stk: 0, qty: 0, last: 0, current: 0, delta: 0, percent: 0, isLimit: false
+                ticker: ticker, stk: 0, qty: 0, last: 0, current: 0, delta: 0, percent: 0, limitBuy: false, limitSell: false
             });
             
             input.value = '';
