@@ -31,7 +31,6 @@
         .table-container {
             flex-grow: 1;
             width: 100%;
-            max-width: 100%;
             margin: 0 auto;
             overflow-x: auto;
         }
@@ -39,7 +38,6 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 14px;
         }
 
         th {
@@ -48,20 +46,22 @@
             background-color: var(--bg-color);
             color: var(--text-muted);
             font-weight: normal;
-            font-size: 12px;
-            padding: 10px 4px;
+            font-size: 11px;
+            padding: 5px 2px;
             border-bottom: 1px solid var(--border);
             text-align: right;
         }
 
-        th:first-child, td:first-child { text-align: left; padding-left: 8px; }
-        th:last-child, td:last-child { padding-right: 8px; }
+        th:first-child, td:first-child { text-align: left; padding-left: 6px; }
+        th:last-child, td:last-child { padding-right: 6px; }
 
         td {
-            padding: 10px 4px;
+            /* Фиксированные отступы для сохранения высоты строк */
+            padding: 5px 2px;
             border-bottom: 1px solid var(--border);
             text-align: right;
             vertical-align: middle;
+            line-height: 1.2;
         }
 
         .name-col { font-weight: bold; }
@@ -71,15 +71,10 @@
         .up { color: var(--up-color); }
         .down { color: var(--down-color); }
 
-        .percent-col {
-            font-size: 15px;
-            font-weight: bold;
-        }
-
         .bottom-panel {
             background-color: var(--card-bg);
             border-top: 1px solid var(--border);
-            padding: 12px 10px;
+            padding: 10px;
             margin-top: auto;
             width: 100%;
             box-sizing: border-box;
@@ -87,8 +82,8 @@
 
         .add-row, .backup-row {
             display: flex;
-            gap: 8px;
-            margin-bottom: 10px;
+            gap: 6px;
+            margin-bottom: 8px;
         }
 
         .btn-backup {
@@ -96,9 +91,9 @@
             border: 1px solid var(--border);
             color: var(--text-main);
             flex: 1;
-            padding: 12px 8px;
+            padding: 10px 6px;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 500;
             cursor: pointer;
         }
@@ -107,19 +102,19 @@
             background-color: var(--bg-color);
             color: var(--text-main);
             border: 1px solid var(--border);
-            padding: 12px;
+            padding: 10px;
             border-radius: 6px;
             flex-grow: 1;
-            font-size: 16px;
+            font-size: 15px;
         }
 
         button.btn-add {
             background-color: #238636;
             color: white;
             border: none;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 6px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
         }
@@ -139,22 +134,22 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 18px;
             width: 100%;
             max-width: 340px;
-            font-size: 16px;
+            font-size: 15px;
             box-sizing: border-box;
         }
 
-        .modal h3 { margin-top: 0; margin-bottom: 15px; color: var(--text-main); font-size: 18px; }
-        .modal-field { margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; }
-        .modal-field label { font-size: 14px; color: var(--text-muted); }
-        .modal-field input { width: 55%; font-size: 16px; box-sizing: border-box; padding: 10px; }
+        .modal h3 { margin-top: 0; margin-bottom: 12px; color: var(--text-main); font-size: 17px; }
+        .modal-field { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .modal-field label { font-size: 13px; color: var(--text-muted); }
+        .modal-field input { width: 55%; font-size: 15px; box-sizing: border-box; padding: 8px; }
         
-        .modal-actions { display: flex; gap: 8px; margin-top: 20px; }
-        .btn-save { background-color: #1f6feb; flex: 1; border: none; padding: 12px 6px; border-radius: 6px; color: white; font-weight: bold; font-size: 14px; cursor: pointer;}
-        .btn-delete { background-color: var(--down-color); flex: 1; border: none; padding: 12px 6px; border-radius: 6px; color: white; font-weight: bold; font-size: 14px; cursor: pointer;}
-        .btn-cancel { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); flex: 1; padding: 12px 6px; border-radius: 6px; font-size: 14px; cursor: pointer;}
+        .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .btn-save { background-color: #1f6feb; flex: 1; border: none; padding: 10px 6px; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; cursor: pointer;}
+        .btn-delete { background-color: var(--down-color); flex: 1; border: none; padding: 10px 6px; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; cursor: pointer;}
+        .btn-cancel { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); flex: 1; padding: 10px 6px; border-radius: 6px; font-size: 13px; cursor: pointer;}
     </style>
 </head>
 <body>
@@ -198,7 +193,7 @@
             <div class="modal-field">
                 <label>Сделка (Qty):</label>
                 <div style="display: flex; gap: 6px; width: 55%;">
-                    <button type="button" onclick="toggleSign('edit-qty')" style="padding: 5px 10px; background: #30363d; border: 1px solid var(--border); color: white; border-radius: 6px; font-weight: bold; font-size: 16px; cursor: pointer;">±</button>
+                    <button type="button" onclick="toggleSign('edit-qty')" style="padding: 4px 8px; background: #30363d; border: 1px solid var(--border); color: white; border-radius: 6px; font-weight: bold; font-size: 15px; cursor: pointer;">±</button>
                     <input type="text" inputmode="decimal" id="edit-qty" style="width: 100%;">
                 </div>
             </div>
@@ -246,6 +241,32 @@
             const hasStk = item.stk !== null && item.stk !== undefined && item.stk !== 0 && item.stk !== '0' && item.stk !== '';
             if (hasStk) return true;
             return item.delta < 0;
+        }
+
+        // Динамический расчет размера шрифта с увеличением delta и percent на 10%
+        function adjustDynamicFontSize() {
+            let maxTickerLen = 4;
+            portfolio.forEach(item => {
+                if (item.ticker && item.ticker.length > maxTickerLen) {
+                    maxTickerLen = item.ticker.length;
+                }
+            });
+
+            let targetSize = 16;
+            if (maxTickerLen > 4) {
+                targetSize = Math.max(12, 16 - (maxTickerLen - 4) * 1.0);
+            } else {
+                targetSize = 17.5;
+            }
+
+            const table = document.querySelector('table');
+            table.style.fontSize = targetSize + 'px';
+
+            // Увеличиваем шрифт в столбцах delta и % ровно на 10% от текущего базового
+            const enhancedCols = document.querySelectorAll('.delta-col, .percent-col');
+            enhancedCols.forEach(el => {
+                el.style.fontSize = (targetSize * 1.1) + 'px';
+            });
         }
 
         function renderTable() {
@@ -297,11 +318,13 @@
                     <td class="qty-col">${item.qty || ''}</td>
                     <td class="price-col">${item.last ? item.last.toFixed(2) : ''}</td>
                     <td class="price-col">${item.current ? item.current.toFixed(2) : ''}</td>
-                    <td class="${colorClass}">${sign}${item.delta ? item.delta.toFixed(2) : '0.00'}</td>
-                    <td class="${colorClass} percent-col">${sign}${item.percent ? item.percent.toFixed(1) : '0.0'}</td>
+                    <td class="delta-col ${colorClass}">${sign}${item.delta ? item.delta.toFixed(2) : '0.00'}</td>
+                    <td class="percent-col ${colorClass}">${sign}${item.percent ? item.percent.toFixed(1) : '0.0'}</td>
                 `;
                 tbody.appendChild(tr);
             });
+
+            adjustDynamicFontSize();
         }
 
         function startLongPress(e, ticker) {
@@ -475,7 +498,7 @@
 
             try {
                 const response = await fetch(`${SCRIPT_URL}?tickers=${tickersList}`);
-                const result = name = await response.json(); // safety fix below in clean parsing
+                const result = await response.json();
 
                 if (!result.error && result.data) {
                     processApiData(result.data);
