@@ -13,8 +13,9 @@
             --text-muted: #8b949e;
             --up-color: #00e5ff;
             --down-color: #ff6666;
-            --up-bright: #99f8ff;
-            --down-bright: #ffb3b3;
+            /* Кислотные оттенки для дельты при отклонении >= 0.25 */
+            --up-bright: #39ff14;   /* Кислотно-зеленый для роста >= 0.25 */
+            --down-bright: #ffee00; /* Кислотно-желтый для падения <= -0.25 */
             --limit-color: #ff70a6; /* Светло-кислотно-розовый для Limit order */
         }
 
@@ -245,7 +246,7 @@
 
         let editingTicker = null;
         let pressTimer = null;
-        let rawCentsValue = 0; // Для маски ввода цены (хранит значение в центах)
+        let rawCentsValue = 0;
 
         function saveToLocal() {
             localStorage.setItem('myPortfolio', JSON.stringify(portfolio));
@@ -281,7 +282,6 @@
             });
         }
 
-        // Логика маски ввода цен (кассовый ввод)
         function updateCurrencyDisplay() {
             const input = document.getElementById('edit-last');
             const numericVal = (rawCentsValue / 100).toFixed(2);
@@ -295,7 +295,7 @@
                 updateCurrencyDisplay();
             } else if (!isNaN(e.key) && e.key !== ' ') {
                 e.preventDefault();
-                if (rawCentsValue < 100000000) { // Ограничение от переполнения
+                if (rawCentsValue < 100000000) {
                     rawCentsValue = rawCentsValue * 10 + parseInt(e.key, 10);
                     updateCurrencyDisplay();
                 }
@@ -303,7 +303,6 @@
         }
 
         function handleCurrencyInput(e) {
-            // Предотвращаем стандартный ввод символов на мобильных клавиатурах, перехватывая логику
             updateCurrencyDisplay();
         }
 
@@ -402,7 +401,6 @@
             document.getElementById('edit-stk').value = item.stk || 0;
             document.getElementById('edit-qty').value = item.qty || 0;
             
-            // Инициализация маски цены из текущего значения Last
             const lastPrice = item.last || 0;
             rawCentsValue = Math.round(lastPrice * 100);
             updateCurrencyDisplay();
@@ -439,14 +437,9 @@
                 const currentStk = parseFloat(item.stk) || 0;
                 const changeQty = parseInputValue('edit-qty');
                 
-                // Автоматически меняем Stk на величину из поля сделки (qty)
                 item.stk = currentStk + changeQty;
                 item.qty = changeQty;
-                
-                // Берем цену из маски
                 item.last = rawCentsValue / 100;
-                
-                // Сохраняем состояние чека Limit order
                 item.isLimit = document.getElementById('edit-limit').checked;
                 
                 item.delta = item.current > 0 ? (item.current - item.last) : 0;
