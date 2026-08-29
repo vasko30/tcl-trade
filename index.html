@@ -13,9 +13,9 @@
             --text-muted: #8b949e;
             --up-color: #00e5ff;
             --down-color: #ff6666;
-            /* Более светлые оттенки для дельты при отклонении >= 0.25 */
             --up-bright: #99f8ff;
             --down-bright: #ffb3b3;
+            --limit-color: #ff70a6; /* Светло-кислотно-розовый для Limit order */
         }
 
         body {
@@ -67,6 +67,7 @@
         }
 
         .name-col { font-weight: bold; }
+        .name-limit { color: var(--limit-color) !important; }
         .qty-col, .stk-col { color: var(--text-main); }
         .price-col { font-weight: bold; }
         
@@ -148,7 +149,8 @@
         .modal h3 { margin-top: 0; margin-bottom: 12px; color: var(--text-main); font-size: 17px; }
         .modal-field { margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
         .modal-field label { font-size: 13px; color: var(--text-muted); }
-        .modal-field input { width: 55%; font-size: 15px; box-sizing: border-box; padding: 8px; }
+        .modal-field input[type="text"] { width: 55%; font-size: 15px; box-sizing: border-box; padding: 8px; }
+        .modal-field input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--limit-color); cursor: pointer; }
         
         .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
         .btn-save { background-color: #1f6feb; flex: 1; border: none; padding: 10px 6px; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; cursor: pointer;}
@@ -203,7 +205,14 @@
             </div>
             <div class="modal-field">
                 <label>Цена (Last):</label>
-                <input type="text" inputmode="decimal" id="edit-last">
+                <div style="display: flex; gap: 4px; width: 55%; align-items: center;">
+                    <input type="text" inputmode="numeric" id="edit-last" style="width: 100%; text-align: right;" placeholder="0.00" oninput="handleCurrencyInput(event)" onkeydown="handleCurrencyKeyDown(event)">
+                    <button type="button" onclick="clearCurrencyInput()" style="background: #30363d; border: 1px solid var(--border); color: var(--text-muted); border-radius: 4px; padding: 8px 6px; font-size: 12px; cursor: pointer;" title="Сбросить">×</button>
+                </div>
+            </div>
+            <div class="modal-field">
+                <label>Limit order:</label>
+                <input type="checkbox" id="edit-limit">
             </div>
             <div class="modal-actions">
                 <button class="btn-save" onclick="savePosition()">Сохр.</button>
@@ -217,9 +226,9 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbynsJ2EGFpJBa9DAouEoP4s8vovb4ref_HzSZQ9qahEmfxhbnnSEg9Kt2CPvVL2ENIL/exec';
         
         const defaultPortfolio = [
-            { ticker: 'LCID', stk: 15, qty: 5, last: 6.40, current: 6.47, delta: 0.07, percent: 1.1 },
-            { ticker: 'SOFI', stk: 12, qty: 2, last: 17.85, current: 17.93, delta: 0.08, percent: 0.4 },
-            { ticker: 'TSCO', stk: 7, qty: -3, last: 36.30, current: 36.40, delta: 0.10, percent: 0.3 }
+            { ticker: 'LCID', stk: 15, qty: 5, last: 6.40, current: 6.47, delta: 0.07, percent: 1.1, isLimit: false },
+            { ticker: 'SOFI', stk: 12, qty: 2, last: 17.85, current: 17.93, delta: 0.08, percent: 0.4, isLimit: true },
+            { ticker: 'TSCO', stk: 7, qty: -3, last: 36.30, current: 36.40, delta: 0.10, percent: 0.3, isLimit: false }
         ];
 
         let portfolio = defaultPortfolio;
@@ -236,6 +245,7 @@
 
         let editingTicker = null;
         let pressTimer = null;
+        let rawCentsValue = 0; // Для маски ввода цены (хранит значение в центах)
 
         function saveToLocal() {
             localStorage.setItem('myPortfolio', JSON.stringify(portfolio));
@@ -271,6 +281,37 @@
             });
         }
 
+        // Логика маски ввода цен (кассовый ввод)
+        function updateCurrencyDisplay() {
+            const input = document.getElementById('edit-last');
+            const numericVal = (rawCentsValue / 100).toFixed(2);
+            input.value = numericVal;
+        }
+
+        function handleCurrencyKeyDown(e) {
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                rawCentsValue = Math.floor(rawCentsValue / 10);
+                updateCurrencyDisplay();
+            } else if (!isNaN(e.key) && e.key !== ' ') {
+                e.preventDefault();
+                if (rawCentsValue < 100000000) { // Ограничение от переполнения
+                    rawCentsValue = rawCentsValue * 10 + parseInt(e.key, 10);
+                    updateCurrencyDisplay();
+                }
+            }
+        }
+
+        function handleCurrencyInput(e) {
+            // Предотвращаем стандартный ввод символов на мобильных клавиатурах, перехватывая логику
+            updateCurrencyDisplay();
+        }
+
+        function clearCurrencyInput() {
+            rawCentsValue = 0;
+            updateCurrencyDisplay();
+        }
+
         function renderTable() {
             const tbody = document.getElementById('table-body');
             tbody.innerHTML = '';
@@ -299,10 +340,8 @@
                 const absDelta = Math.abs(item.delta || 0);
                 const isBright = absDelta >= 0.25;
 
-                // Цветовые классы для процента (стандартные)
                 const percentColorClass = isUp ? 'up' : (isDown ? 'down' : '');
                 
-                // Цветовые классы для дельты (светлее, если абсолютное значение >= 0.25)
                 let deltaColorClass = '';
                 if (isUp) {
                     deltaColorClass = isBright ? 'up-bright' : 'up';
@@ -311,6 +350,7 @@
                 }
 
                 const sign = isUp ? '+' : '';
+                const nameClass = item.isLimit ? 'name-col name-limit' : 'name-col';
 
                 const tr = document.createElement('tr');
                 
@@ -328,7 +368,7 @@
                 tr.addEventListener('mouseleave', cancelLongPress);
 
                 tr.innerHTML = `
-                    <td class="name-col">${item.ticker}</td>
+                    <td class="${nameClass}">${item.ticker}</td>
                     <td class="stk-col">${item.stk || ''}</td>
                     <td class="qty-col">${item.qty || ''}</td>
                     <td class="price-col">${item.last ? item.last.toFixed(2) : ''}</td>
@@ -361,7 +401,13 @@
             document.getElementById('modal-title').innerText = `Изменить: ${ticker}`;
             document.getElementById('edit-stk').value = item.stk || 0;
             document.getElementById('edit-qty').value = item.qty || 0;
-            document.getElementById('edit-last').value = item.last || 0;
+            
+            // Инициализация маски цены из текущего значения Last
+            const lastPrice = item.last || 0;
+            rawCentsValue = Math.round(lastPrice * 100);
+            updateCurrencyDisplay();
+
+            document.getElementById('edit-limit').checked = !!item.isLimit;
             
             document.getElementById('edit-modal').style.display = 'flex';
         }
@@ -390,9 +436,18 @@
         function savePosition() {
             const item = portfolio.find(p => p.ticker === editingTicker);
             if (item) {
-                item.stk = parseInputValue('edit-stk');
-                item.qty = parseInputValue('edit-qty');
-                item.last = parseInputValue('edit-last');
+                const currentStk = parseFloat(item.stk) || 0;
+                const changeQty = parseInputValue('edit-qty');
+                
+                // Автоматически меняем Stk на величину из поля сделки (qty)
+                item.stk = currentStk + changeQty;
+                item.qty = changeQty;
+                
+                // Берем цену из маски
+                item.last = rawCentsValue / 100;
+                
+                // Сохраняем состояние чека Limit order
+                item.isLimit = document.getElementById('edit-limit').checked;
                 
                 item.delta = item.current > 0 ? (item.current - item.last) : 0;
                 item.percent = item.last > 0 ? (item.delta / item.last) * 100 : 0;
@@ -422,7 +477,7 @@
             }
 
             portfolio.push({
-                ticker: ticker, stk: 0, qty: 0, last: 0, current: 0, delta: 0, percent: 0
+                ticker: ticker, stk: 0, qty: 0, last: 0, current: 0, delta: 0, percent: 0, isLimit: false
             });
             
             input.value = '';
