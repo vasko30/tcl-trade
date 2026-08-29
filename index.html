@@ -12,7 +12,10 @@
             --text-main: #c9d1d9;
             --text-muted: #8b949e;
             --up-color: #00e5ff;
-            --down-color: #ff9999;
+            --down-color: #ff6666;
+            /* Более светлые оттенки для дельты при отклонении >= 0.25 */
+            --up-bright: #99f8ff;
+            --down-bright: #ffb3b3;
         }
 
         body {
@@ -56,7 +59,6 @@
         th:last-child, td:last-child { padding-right: 6px; }
 
         td {
-            /* Фиксированные отступы для сохранения высоты строк */
             padding: 5px 2px;
             border-bottom: 1px solid var(--border);
             text-align: right;
@@ -70,6 +72,8 @@
         
         .up { color: var(--up-color); }
         .down { color: var(--down-color); }
+        .up-bright { color: var(--up-bright); }
+        .down-bright { color: var(--down-bright); }
 
         .bottom-panel {
             background-color: var(--card-bg);
@@ -243,7 +247,6 @@
             return item.delta < 0;
         }
 
-        // Динамический расчет размера шрифта с увеличением delta и percent на 10%
         function adjustDynamicFontSize() {
             let maxTickerLen = 4;
             portfolio.forEach(item => {
@@ -262,7 +265,6 @@
             const table = document.querySelector('table');
             table.style.fontSize = targetSize + 'px';
 
-            // Увеличиваем шрифт в столбцах delta и % ровно на 10% от текущего базового
             const enhancedCols = document.querySelectorAll('.delta-col, .percent-col');
             enhancedCols.forEach(el => {
                 el.style.fontSize = (targetSize * 1.1) + 'px';
@@ -294,7 +296,20 @@
             portfolio.forEach(item => {
                 const isUp = item.delta > 0;
                 const isDown = item.delta < 0;
-                const colorClass = isUp ? 'up' : (isDown ? 'down' : '');
+                const absDelta = Math.abs(item.delta || 0);
+                const isBright = absDelta >= 0.25;
+
+                // Цветовые классы для процента (стандартные)
+                const percentColorClass = isUp ? 'up' : (isDown ? 'down' : '');
+                
+                // Цветовые классы для дельты (светлее, если абсолютное значение >= 0.25)
+                let deltaColorClass = '';
+                if (isUp) {
+                    deltaColorClass = isBright ? 'up-bright' : 'up';
+                } else if (isDown) {
+                    deltaColorClass = isBright ? 'down-bright' : 'down';
+                }
+
                 const sign = isUp ? '+' : '';
 
                 const tr = document.createElement('tr');
@@ -318,8 +333,8 @@
                     <td class="qty-col">${item.qty || ''}</td>
                     <td class="price-col">${item.last ? item.last.toFixed(2) : ''}</td>
                     <td class="price-col">${item.current ? item.current.toFixed(2) : ''}</td>
-                    <td class="delta-col ${colorClass}">${sign}${item.delta ? item.delta.toFixed(2) : '0.00'}</td>
-                    <td class="percent-col ${colorClass}">${sign}${item.percent ? item.percent.toFixed(1) : '0.0'}</td>
+                    <td class="delta-col ${deltaColorClass}">${sign}${item.delta ? item.delta.toFixed(2) : '0.00'}</td>
+                    <td class="percent-col ${percentColorClass}">${sign}${item.percent ? item.percent.toFixed(1) : '0.0'}</td>
                 `;
                 tbody.appendChild(tr);
             });
